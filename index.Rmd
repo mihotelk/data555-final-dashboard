@@ -85,7 +85,7 @@ This dashboard explores provisional diabetes-related death counts in the United 
 
 Understanding when diabetes-related deaths increased and which groups were most affected can support public health surveillance and targeted intervention planning.
 
-Row
+Row{data-height=500}
 -------------------------------------
 
 ### Monthly Diabetes Death Trends in 2020
@@ -141,12 +141,12 @@ plot_ly(
       l = 70,
       r = 30,
       t = 80,
-      b = 70
+      b = 110
     )
   )
 ```
 
-Row
+Row{data-height=540}
 -------------------------------------
 
 ### Diabetes Deaths by Age Group and Sex
@@ -188,7 +188,7 @@ plot_ly(
       l = 70,
       r = 30,
       t = 80,
-      b = 100
+      b = 140
     )
   )
 ```
