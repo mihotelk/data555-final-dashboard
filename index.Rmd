@@ -4,7 +4,7 @@ author: "Ruigang Jiang"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
-    vertical_layout: fill
+    vertical_layout: scroll
 ---
 
 ```{r setup, include=FALSE}
@@ -19,6 +19,7 @@ library(plotly)
 library(scales)
 library(readr)
 library(flexdashboard)
+library(DT)
 ```
 
 ```{r data-prep, include=FALSE}
@@ -70,23 +71,26 @@ age_sex_deaths <- diabetes_clean %>%
   arrange(AgeGroup, Sex)
 ```
 
-# Overview
+Overview
+=====================================
 
-## Row
+Row
+-------------------------------------
 
-### Diabetes Mortality in 2020
+### Dashboard Summary
 
-This dashboard explores provisional diabetes-related death counts in the United States during 2020.
-The first chart highlights monthly trends, while the second compares deaths across age groups and sex.
+This dashboard explores provisional diabetes-related death counts in the United States in 2020. The visualizations highlight monthly mortality trends and demographic differences across age groups and sex.
 
 ### Why This Matters
 
-This dashboard helps identify temporal and demographic patterns in diabetes-related mortality in the United States.
-These findings can support public health monitoring and more targeted prevention strategies.
+Understanding when diabetes-related deaths increased and which groups were most affected can support public health surveillance and targeted intervention planning.
 
-## Row
+Row
+-------------------------------------
 
 ### Monthly Diabetes Death Trends in 2020
+
+*Deaths peak in April and remain elevated mid-year; multiple-cause counts are consistently higher than underlying-cause counts.*
 
 ```{r monthly-plot}
 plot_ly(
@@ -98,7 +102,7 @@ plot_ly(
   name = "Underlying Cause",
   text = ~paste0(
     "Month: ", month_label,
-    "<br>Underlying-cause deaths: ", comma(round(total_diabetes_uc, 0))
+    "<br>Underlying deaths: ", comma(round(total_diabetes_uc, 0))
   ),
   hoverinfo = "text",
   line = list(width = 3),
@@ -110,14 +114,17 @@ plot_ly(
     name = "Multiple Cause",
     text = ~paste0(
       "Month: ", month_label,
-      "<br>Multiple-cause deaths: ", comma(round(total_diabetes_mc, 0))
+      "<br>Multiple deaths: ", comma(round(total_diabetes_mc, 0))
     ),
     hoverinfo = "text",
     line = list(width = 3),
     marker = list(size = 8)
   ) %>%
   layout(
-    title = list(text = "Monthly Diabetes Death Counts"),
+    title = list(
+      text = "Monthly Diabetes Death Counts",
+      y = 0.95
+    ),
     xaxis = list(
       title = "Month of Death in 2020",
       tickmode = "array",
@@ -125,15 +132,26 @@ plot_ly(
       ticktext = month.abb
     ),
     yaxis = list(title = "Number of Deaths"),
-    legend = list(orientation = "h", x = 0.1, y = 1.12)
+    legend = list(
+      orientation = "h",
+      x = 0.3,
+      y = 1.05
+    ),
+    margin = list(
+      l = 70,
+      r = 30,
+      t = 80,
+      b = 70
+    )
   )
 ```
 
-This interactive line chart shows that deaths with diabetes listed as a multiple cause were consistently higher than deaths with diabetes listed as the underlying cause. Both measures rose sharply in spring 2020, with a visible peak around April, and then declined later in the year.
-
-## Row
+Row
+-------------------------------------
 
 ### Diabetes Deaths by Age Group and Sex
+
+*Mortality rises steeply with age and is consistently higher among males across most age groups.*
 
 ```{r age-sex-plot}
 plot_ly(
@@ -145,24 +163,41 @@ plot_ly(
   text = ~paste0(
     "Age group: ", AgeGroup,
     "<br>Sex: ", Sex,
-    "<br>Underlying-cause deaths: ", comma(round(total_diabetes_uc, 0))
+    "<br>Deaths: ", comma(round(total_diabetes_uc, 0))
   ),
   hoverinfo = "text"
 ) %>%
   layout(
-    title = list(text = "Underlying-Cause Diabetes Deaths by Age Group and Sex"),
-    xaxis = list(title = "Age Group", tickangle = -35),
+    title = list(
+      text = "Underlying-Cause Diabetes Deaths by Age Group and Sex",
+      y = 0.95
+    ),
+    xaxis = list(
+      title = "Age Group",
+      tickangle = -45
+    ),
     yaxis = list(title = "Number of Deaths"),
     barmode = "group",
-    legend = list(title = list(text = "Sex"))
+    legend = list(
+      orientation = "h",
+      x = 0.3,
+      y = 1.05,
+      title = list(text = "Sex")
+    ),
+    margin = list(
+      l = 70,
+      r = 30,
+      t = 80,
+      b = 100
+    )
   )
 ```
 
-This grouped bar chart shows that diabetes-related deaths increased strongly with age, especially in older adult groups. Interactive tooltips and legend controls make it easier to compare male and female death counts within each age group.
+Dataset
+=====================================
 
-# Dataset
-
-## Row
+Row
+-------------------------------------
 
 ### Dataset Description
 
@@ -172,24 +207,46 @@ These records were collected through national mortality reporting systems in the
 The study population is the U.S. population represented in provisional death reporting.
 The dashboard focuses on deaths reported during calendar year 2020.
 
-## Row
+Row
+-------------------------------------
 
 ### Notes for Interpretation
 
 Because these are provisional counts, they may differ from finalized mortality statistics released later.
 The charts in this dashboard are intended for descriptive exploration of temporal and demographic patterns rather than causal inference.
 
-# Repository
+Row
+-------------------------------------
 
-## Row
+### Sample of Raw Data
+The table below shows the first 50 rows of the cleaned CDC provisional diabetes death counts dataset used in this dashboard.
 
-## GitHub Repository
+```{r data-display}
+DT::datatable(
+  diabetes_clean %>% head(50),
+  options = list(pageLength = 10, scrollX = TRUE)
+)
+```
+Repository
+=====================================
+
+Row
+-------------------------------------
+
+### GitHub Repository
 
 Source code for this dashboard is available here:
+[GitHub Repository](https://github.com/mihotelk/data555-final-dashboard)
 
-<a href="https://github.com/mihotelk/data555-final-dashboard" target="_blank">
-https://github.com/mihotelk/data555-final-dashboard
-</a>
+Row
+-------------------------------------
+
+### Project Relevance
+
+Understanding when diabetes-related mortality increased and which demographic groups were most affected can help guide surveillance and intervention priorities.
+A simple interactive dashboard makes these patterns easier to communicate to both technical and non-technical audiences.
+
+
 
 
 
