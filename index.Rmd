@@ -1,31 +1,29 @@
 ---
-title: "DATA 555 Final Project 3a"
+title: "Diabetes Death Dashboard"
 author: "Ruigang Jiang"
-date: "`r Sys.Date()`"
-output: html_document
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
 ---
 
-```{r, message=FALSE, warning=FALSE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
 library(tidyverse)
 library(plotly)
 library(scales)
-library(htmltools)
+library(readr)
+library(flexdashboard)
 ```
 
-## Introduction
-
-This document presents two interactive visualizations based on provisional diabetes-related death counts in 2020. The purpose is to explore patterns in deaths over time and compare counts across demographic groups using interactive tools.
-
-## Data Import
-
-```{r, message=FALSE, warning=FALSE}
+```{r data-prep, include=FALSE}
 diabetes_data <- read_csv("AH_Provisional_Diabetes_Death_Counts_for_2020.csv")
-glimpse(diabetes_data)
-```
 
-## Data Cleaning
-
-```{r, message=FALSE, warning=FALSE}
 diabetes_clean <- diabetes_data %>%
   mutate(
     Date_Of_Death_Year = as.numeric(Date_Of_Death_Year),
@@ -35,16 +33,12 @@ diabetes_clean <- diabetes_data %>%
     C19PlusDiabetes = as.numeric(C19PlusDiabetes),
     month_label = month.abb[Date_Of_Death_Month]
   ) %>%
-  filter(!is.na(Date_Of_Death_Month),
-         !is.na(AgeGroup),
-         !is.na(Sex))
+  filter(
+    !is.na(Date_Of_Death_Month),
+    !is.na(AgeGroup),
+    !is.na(Sex)
+  )
 
-head(diabetes_clean)
-```
-
-## Plot 1: Interactive Line Chart of Monthly Diabetes-Related Death Trends in 2020
-
-```{r, message=FALSE, warning=FALSE}
 monthly_deaths <- diabetes_clean %>%
   group_by(Date_Of_Death_Month, month_label) %>%
   summarise(
@@ -54,50 +48,6 @@ monthly_deaths <- diabetes_clean %>%
   ) %>%
   arrange(Date_Of_Death_Month)
 
-p1 <- plot_ly(
-  data = monthly_deaths,
-  x = ~Date_Of_Death_Month,
-  y = ~total_diabetes_uc,
-  type = "scatter",
-  mode = "lines+markers",
-  text = ~paste(
-    "Month:", month_label,
-    "<br>Underlying diabetes deaths:", comma(total_diabetes_uc)
-  ),
-  hoverinfo = "text",
-  name = "Underlying Cause"
-) %>%
-  add_trace(
-    y = ~total_diabetes_mc,
-    text = ~paste(
-      "Month:", month_label,
-      "<br>Multiple-cause diabetes deaths:", comma(total_diabetes_mc)
-    ),
-    hoverinfo = "text",
-    name = "Multiple Cause"
-  ) %>%
-  layout(
-    title = list(text = "Monthly Diabetes-Related Deaths in 2020", font = list(size = 18)),
-    xaxis = list(
-      title = "Month of Death",
-      tickmode = "array",
-      tickvals = monthly_deaths$Date_Of_Death_Month,
-      ticktext = monthly_deaths$month_label
-    ),
-    yaxis = list(
-      title = "Number of Deaths"
-    ),
-    legend = list(title = list(text = "Death Type"))
-  )
-
-p1
-```
-
-This visualization shows the monthly trend in diabetes-related deaths during 2020. Deaths where diabetes was recorded as a multiple cause are consistently much higher than deaths where diabetes was the underlying cause, and both measures peak around April before declining later in the year. The interactive hover tooltips allow users to inspect the exact number of deaths in each month and compare patterns over time.
-
-## Plot 2: Diabetes Deaths by Age Group and Sex
-
-```{r, message=FALSE, warning=FALSE}
 age_sex_deaths <- diabetes_clean %>%
   group_by(AgeGroup, Sex) %>%
   summarise(
@@ -107,44 +57,139 @@ age_sex_deaths <- diabetes_clean %>%
   filter(
     !AgeGroup %in% c("All ages", "Not stated"),
     !Sex %in% c("All Sexes")
-  )
+  ) %>%
+  mutate(
+    AgeGroup = factor(
+      AgeGroup,
+      levels = c(
+        "<18 years", "18-29 years", "30-39 years", "40-49 years",
+        "50-59 years", "60-69 years", "70-79 years", "80 years and over"
+      )
+    )
+  ) %>%
+  arrange(AgeGroup, Sex)
+```
 
-p2 <- plot_ly(
+# Overview
+
+## Row
+
+### Diabetes Mortality in 2020
+
+This dashboard explores provisional diabetes-related death counts in the United States during 2020.
+The first chart highlights monthly trends, while the second compares deaths across age groups and sex.
+
+### Why This Matters
+
+This dashboard helps identify temporal and demographic patterns in diabetes-related mortality in the United States.
+These findings can support public health monitoring and more targeted prevention strategies.
+
+## Row
+
+### Monthly Diabetes Death Trends in 2020
+
+```{r monthly-plot}
+plot_ly(
+  data = monthly_deaths,
+  x = ~Date_Of_Death_Month,
+  y = ~total_diabetes_uc,
+  type = "scatter",
+  mode = "lines+markers",
+  name = "Underlying Cause",
+  text = ~paste0(
+    "Month: ", month_label,
+    "<br>Underlying-cause deaths: ", comma(round(total_diabetes_uc, 0))
+  ),
+  hoverinfo = "text",
+  line = list(width = 3),
+  marker = list(size = 8)
+) %>%
+  add_trace(
+    y = ~total_diabetes_mc,
+    mode = "lines+markers",
+    name = "Multiple Cause",
+    text = ~paste0(
+      "Month: ", month_label,
+      "<br>Multiple-cause deaths: ", comma(round(total_diabetes_mc, 0))
+    ),
+    hoverinfo = "text",
+    line = list(width = 3),
+    marker = list(size = 8)
+  ) %>%
+  layout(
+    title = list(text = "Monthly Diabetes Death Counts"),
+    xaxis = list(
+      title = "Month of Death in 2020",
+      tickmode = "array",
+      tickvals = 1:12,
+      ticktext = month.abb
+    ),
+    yaxis = list(title = "Number of Deaths"),
+    legend = list(orientation = "h", x = 0.1, y = 1.12)
+  )
+```
+
+This interactive line chart shows that deaths with diabetes listed as a multiple cause were consistently higher than deaths with diabetes listed as the underlying cause. Both measures rose sharply in spring 2020, with a visible peak around April, and then declined later in the year.
+
+## Row
+
+### Diabetes Deaths by Age Group and Sex
+
+```{r age-sex-plot}
+plot_ly(
   data = age_sex_deaths,
   x = ~AgeGroup,
   y = ~total_diabetes_uc,
   color = ~Sex,
   type = "bar",
-  text = ~paste(
-    "Age group:", AgeGroup,
-    "<br>Sex:", Sex,
-    "<br>Underlying diabetes deaths:", comma(total_diabetes_uc)
+  text = ~paste0(
+    "Age group: ", AgeGroup,
+    "<br>Sex: ", Sex,
+    "<br>Underlying-cause deaths: ", comma(round(total_diabetes_uc, 0))
   ),
   hoverinfo = "text"
 ) %>%
   layout(
-    title = list(
-      text = "Underlying Diabetes Deaths by Age Group and Sex",
-      font = list(size = 18)
-    ),
-    xaxis = list(
-      title = "Age Group",
-      tickangle = -45
-    ),
-    yaxis = list(
-      title = "Number of Deaths"
-    ),
+    title = list(text = "Underlying-Cause Diabetes Deaths by Age Group and Sex"),
+    xaxis = list(title = "Age Group", tickangle = -35),
+    yaxis = list(title = "Number of Deaths"),
     barmode = "group",
     legend = list(title = list(text = "Sex"))
   )
-
-p2
 ```
 
-This visualization compares underlying diabetes-related deaths across age groups for males and females in 2020. Death counts increase dramatically with age, with the largest numbers occurring among individuals aged 65 years and older, especially in the 70–79 and 80+ age groups. The interactive hover tool tips allow users to inspect the exact number of deaths for each age group and easily compare patterns between males and females.
+This grouped bar chart shows that diabetes-related deaths increased strongly with age, especially in older adult groups. Interactive tooltips and legend controls make it easier to compare male and female death counts within each age group.
 
+# Dataset
 
+## Row
 
+### Dataset Description
+
+This dashboard uses the CDC provisional diabetes death counts dataset for 2020.
+The dataset includes deaths in which diabetes was recorded as an underlying cause or as a multiple cause of death.
+These records were collected through national mortality reporting systems in the United States.
+The study population is the U.S. population represented in provisional death reporting.
+The dashboard focuses on deaths reported during calendar year 2020.
+
+## Row
+
+### Notes for Interpretation
+
+Because these are provisional counts, they may differ from finalized mortality statistics released later.
+The charts in this dashboard are intended for descriptive exploration of temporal and demographic patterns rather than causal inference.
+
+# Repository
+
+## Row
+
+## GitHub Repository
+
+Source code for this dashboard is available here:
+
+<a href="https://github.com/mihotelk/data555-final-dashboard" target="_blank">
+https://github.com/mihotelk/data555-final-dashboard
+</a>
 
 
 
